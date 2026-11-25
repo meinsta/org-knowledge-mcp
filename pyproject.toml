@@ -4,7 +4,8 @@ version = "0.1.0"
 description = "An MCP server that answers from your own sources and proves every claim is cited"
 license = "Apache-2.0"
 requires-python = ">=3.10"
-dependencies = ["mcp>=1.2", "fieldkit @ git+https://github.com/meinsta/field-kit"]
+# mcp 2.x renamed FastMCP to MCPServer and changed other APIs; migrate when 1.x stops getting fixes
+dependencies = ["mcp>=1.2,<2", "fieldkit @ git+https://github.com/meinsta/field-kit"]
 
 [project.scripts]
 org-knowledge-mcp = "knowledge.server:main"
