@@ -1,20 +1,24 @@
 # org-knowledge-mcp
 
-**An MCP server that answers from your own sources and proves every claim is cited.**
+**Answer from your own sources through an MCP server that checks each claim against the line it cites.**
 
-Install it in Claude, Cursor or any MCP client. `ask` returns evidence from your product docs, field
-notes and support history, each line with an id to cite. `check` takes the answer back before it
-ships: a claim passes when its source exists and holds the quoted words.
+Picture a sales engineer asking Claude whether API keys can rotate with zero downtime. The answer
+arrives confident and cited. Does the cited sentence exist, and does it say that?
 
-No model runs in the server. Your client writes the answer; code decides what it may read and
-whether its claims are sourced. One cluster, no LLM key.
+This server gives an MCP client two tools. `ask` returns evidence from your product docs, field
+notes and support history, each line with an id to cite. `check` takes the drafted answer back
+before it ships and accepts a claim when its source exists and holds the quoted words.
+
+Your client writes the answer. The server decides which evidence the client reads and which claims
+count as sourced, in code, so the same claim gets the same verdict every time. A Qdrant cluster is all it
+needs to run.
 
 Built on [field-kit](https://github.com/meinsta/field-kit). Reads the collection that
 [grounding-layer](https://github.com/meinsta/grounding-layer) keeps current.
 
-## Get started
+## Install It in Your MCP Client
 
-Build the collection first: run the grounding-layer refresh once. Then:
+Build the collection first by running the grounding-layer refresh. Then:
 
 ```bash
 pip install git+https://github.com/meinsta/org-knowledge-mcp
@@ -23,7 +27,7 @@ claude mcp add org-knowledge -e QDRANT_URL=... -e QDRANT_API_KEY=... -- org-know
 
 Ask your client: *"Can we rotate keys with zero downtime? Use org-knowledge."*
 
-## How an answer is built
+## Follow an Answer From Question to Checked Claim
 
 ```mermaid
 flowchart LR
@@ -35,12 +39,14 @@ flowchart LR
   Q --> K
 ```
 
+This table lists each tool and its return value.
+
 | Tool | Returns |
 |---|---|
-| `ask(question, source="")` | Evidence lines: `[id] (source · ref) text`. With no `source`, the top 3 of every lane, so docs cannot crowd out what customers said. With one, the top 6 of that lane. |
-| `check(claims)` | Each claim is `{"text", "source_id", "quote"}`. Accepted when the id is a real row and the row holds the quote. Rejected with the reason otherwise. |
+| `ask(question, source="")` | Evidence lines in the form `[id] (source · ref) text`. Leave `source` empty for the top 3 of every lane, so customer notes and tickets appear beside the docs. Name a lane for its top 6. |
+| `check(claims)` | A verdict per claim. Each claim is `{"text", "source_id", "quote"}`, accepted when the id is a real row that holds the quote, and returned with the reason when it fails. |
 
-A real exchange, from the Quillfeather fixtures:
+A real exchange on the Quillfeather fixtures:
 
 ```
 ask("Can we rotate keys with zero downtime?")
@@ -53,25 +59,28 @@ accepted: "The old key works for 24 hours after rotation."
 rejected: "Rotation is instant and free." (quote is not in source)
 ```
 
-## What we found
+## See the Results Measured on a Live Cluster
 
-Measured on a Qdrant Cloud cluster over the Quillfeather collection (23 points, 10 golden questions):
+These numbers come from a Qdrant Cloud cluster over the Quillfeather collection: 23 points and 10
+golden questions.
 
 | Check | Result |
 |---|---|
-| `ask` puts the golden answer in the evidence | 10 of 10 |
-| `check` accepts a sourced claim and rejects a wrong quote and a wrong id | 10 of 10 |
+| `ask` returns the golden answer in its evidence | 10 of 10 questions |
+| `check` accepts a sourced claim | 10 of 10 |
+| `check` rejects a claim with a wrong quote or a wrong id | 20 of 20 |
 
-Reproduce it with `python3 evaluate.py`.
+Reproduce them with `python3 evaluate.py`.
 
-## What `check` does not do
+## Add a Model When You Need to Judge Reasoning
 
-It proves a claim's quote is in its source. It does not prove the claim follows from the quote: a
-client can quote a real sentence and conclude something the sentence does not say. That judgment
-needs a model, and it belongs in a separate verify step.
+`check` confirms that a claim's quote is in its source. Whether the claim follows from the quote
+is a separate question: a client can quote a real sentence and conclude more than it says. Judging
+that takes a model, and it belongs in its own verify step after `check`.
 
-## Make it yours
+## Point It at Your Own Collection
 
-Point `KNOWLEDGE_COLLECTION` at your own collection. Rows need `text`, `source` and `ref` in the
-payload, and a keyword index on `source`. Name your lanes in the `ask` description in
-[`knowledge/server.py`](knowledge/server.py), since that text is what the client reads to choose one.
+Set `KNOWLEDGE_COLLECTION` to your collection. Each row needs `text`, `source` and `ref` in its
+payload, and the collection needs a keyword index on `source`. Name your lanes in the `ask`
+description in [`knowledge/server.py`](knowledge/server.py), because that description is what the
+client reads when it chooses a lane.
