@@ -1,0 +1,12 @@
+[
+ {"q": "Can we rotate keys with zero downtime?", "target": ["Rotate a key from the console or with the rotate endpoint, and the old key keeps working for 24 hours."]},
+ {"q": "What happens to keys nobody uses?", "target": ["Keys that go unused for 90 days are disabled automatically."]},
+ {"q": "Is there a key that cannot change billing?", "target": ["A dispatch key can create and cancel routes but cannot change billing settings."]},
+ {"q": "How many requests per minute do we get?", "target": ["The default limit is 600 requests per minute for each workspace.", "Enterprise workspaces can raise the limit to 6,000 requests per minute from the console."]},
+ {"q": "Why does optimization use up our quota so fast?", "target": ["Route optimization calls count as 10 requests each because they run a solver."]},
+ {"q": "How do we verify a webhook is really from Quillfeather?", "target": ["Each delivery is signed with an HMAC-SHA256 signature in the X-Quill-Signature header."]},
+ {"q": "Do webhook events arrive in order?", "target": ["Webhook events for one route always arrive in order, while events across routes can interleave."]},
+ {"q": "Does driver data stay in the EU?", "target": ["Route and driver data never leaves the region a workspace was created in."]},
+ {"q": "Which customers were blocked by the default rate limit?", "target": ["At peak we send around four thousand requests per minute, so the default limit is a blocker for the pilot."]},
+ {"q": "Who asked for data residency in writing?", "target": ["Legal needs written confirmation that driver data stays inside the EU before we sign."]}
+]
